@@ -1,0 +1,834 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Coalition Inclusion Probabilities</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&family=Source+Serif+4:ital,opsz,wght@0,8..60,300;0,8..60,400;0,8..60,600;1,8..60,300&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdn.plot.ly/plotly-2.26.0.min.js"></script>
+<style>
+  :root {
+    --ink:#1a1a2e; --ink-light:#2d2d4e; --cream:#f5f0e8; --cream-dark:#ede6d6;
+    --gold:#c9933a; --gold-light:#e8b96a; --blue-muted:#3a5a8c;
+    --text-body:#2c2c3e; --text-muted:#6b6b85; --border:#d4cdc0;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  html{scroll-behavior:smooth;}
+  body{background:var(--cream);color:var(--text-body);font-family:'Source Serif 4',Georgia,serif;font-weight:300;line-height:1.7;overflow-x:hidden;}
+
+  nav{position:fixed;top:0;left:0;right:0;z-index:100;background:var(--ink);display:flex;align-items:center;justify-content:space-between;padding:0 4rem;height:56px;border-bottom:2px solid var(--gold);}
+  .nav-brand{font-family:'JetBrains Mono',monospace;font-size:0.78rem;color:var(--gold);letter-spacing:0.15em;text-transform:uppercase;}
+  .nav-links{display:flex;gap:2rem;list-style:none;}
+  .nav-links a{font-family:'JetBrains Mono',monospace;font-size:0.82rem;color:rgba(255,255,255,0.6);text-decoration:none;letter-spacing:0.08em;text-transform:uppercase;transition:color 0.2s;}
+  .nav-links a:hover{color:var(--gold-light);}
+
+  .hero{min-height:100vh;background:var(--ink);display:grid;grid-template-columns:1.1fr 0.9fr;align-items:center;padding-top:56px;position:relative;overflow:hidden;}
+  .hero::before{content:'';position:absolute;top:0;right:0;width:50%;height:100%;background:repeating-linear-gradient(-45deg,transparent,transparent 40px,rgba(201,147,58,0.03) 40px,rgba(201,147,58,0.03) 41px);}
+  .hero-text{padding:4rem 4rem 4rem 6rem;position:relative;z-index:1;}
+  .hero-label{font-family:'JetBrains Mono',monospace;font-size:0.72rem;color:var(--gold);letter-spacing:0.2em;text-transform:uppercase;margin-bottom:1.5rem;display:flex;align-items:center;gap:1rem;}
+  .hero-label::before{content:'';display:block;width:2rem;height:1px;background:var(--gold);}
+  .hero h1{font-family:'Playfair Display',Georgia,serif;font-size:clamp(2rem,3.2vw,2.9rem);font-weight:700;color:var(--cream);line-height:1.15;margin-bottom:1rem;}
+  .hero h1 em{font-style:italic;color:var(--gold-light);}
+  .hero-catchline{font-size:1rem;color:rgba(245,240,232,0.6);max-width:460px;margin-bottom:1.8rem;line-height:1.8;}
+  .hero-meta{display:flex;flex-direction:column;gap:0.5rem;margin-bottom:2rem;}
+  .hero-meta-item{font-family:'JetBrains Mono',monospace;font-size:0.74rem;color:rgba(245,240,232,0.4);}
+  .hero-meta-item span{color:rgba(245,240,232,0.75);}
+  .hero-visual{padding:4rem 5rem 4rem 3rem;position:relative;z-index:1;display:flex;flex-direction:column;gap:2rem;}
+  .stat-pair{display:grid;grid-template-columns:1fr 1fr;gap:1.5px;background:rgba(201,147,58,0.2);border:1px solid rgba(201,147,58,0.2);}
+  .stat-cell{background:rgba(26,26,46,0.95);padding:2rem 1.5rem;text-align:center;transition:background 0.2s;}
+  .stat-cell:hover{background:rgba(40,40,70,0.95);}
+  .stat-number{font-family:'Playfair Display',Georgia,serif;font-size:3rem;font-weight:600;color:var(--gold);line-height:1;margin-bottom:0.4rem;}
+  .stat-label{font-family:'JetBrains Mono',monospace;font-size:0.65rem;color:rgba(245,240,232,0.45);letter-spacing:0.12em;text-transform:uppercase;}
+  .hero-buttons{display:flex;flex-direction:column;gap:0.75rem;}
+  .btn-primary{display:inline-flex;align-items:center;gap:0.6rem;background:var(--gold);color:var(--ink);padding:0.85rem 1.6rem;font-family:'JetBrains Mono',monospace;font-size:0.73rem;font-weight:500;letter-spacing:0.08em;text-transform:uppercase;text-decoration:none;border:none;cursor:pointer;transition:background 0.2s,transform 0.15s;width:100%;justify-content:flex-start;}
+  .btn-primary:hover{background:var(--gold-light);transform:translateY(-1px);}
+  .btn-secondary{display:inline-flex;align-items:center;gap:0.6rem;background:transparent;color:rgba(245,240,232,0.75);padding:0.85rem 1.6rem;font-family:'JetBrains Mono',monospace;font-size:0.73rem;letter-spacing:0.08em;text-transform:uppercase;text-decoration:none;border:1px solid rgba(245,240,232,0.2);cursor:pointer;transition:all 0.2s;width:100%;justify-content:flex-start;}
+  .btn-secondary:hover{border-color:var(--gold);color:var(--gold);}
+
+  section{padding:5rem 0;}
+  .container{max-width:1260px;margin:0 auto;padding:0 2.5rem;}
+  .section-header{display:flex;align-items:baseline;gap:1.5rem;margin-bottom:3rem;padding-bottom:1.5rem;border-bottom:1px solid var(--border);}
+  .section-number{font-family:'JetBrains Mono',monospace;font-size:0.7rem;color:var(--gold);letter-spacing:0.15em;}
+  .section-title{font-family:'Playfair Display',Georgia,serif;font-size:1.9rem;font-weight:600;color:var(--ink);}
+
+  #abstract{background:var(--cream);}
+  .abstract-text{font-size:1.05rem;color:var(--text-body);line-height:1.85;max-width:780px;}
+  .abstract-text p+p{margin-top:1.2rem;}
+  .abstract-text strong{color:var(--ink);font-weight:600;}
+
+  #visualization{background:var(--cream-dark);}
+  .viz-intro{font-size:1rem;color:var(--text-muted);max-width:680px;margin-bottom:2rem;line-height:1.75;}
+  .viz-controls{display:flex;align-items:center;gap:1.5rem;margin-bottom:1.5rem;flex-wrap:wrap;padding:1.2rem 1.8rem;background:white;border:1px solid var(--border);}
+  .control-group{display:flex;align-items:center;gap:0.75rem;}
+  .control-label{font-family:'JetBrains Mono',monospace;font-size:0.68rem;color:var(--text-muted);letter-spacing:0.1em;text-transform:uppercase;white-space:nowrap;}
+  .control-select{font-family:'JetBrains Mono',monospace;font-size:0.78rem;color:var(--ink);background:var(--cream);border:1px solid var(--border);padding:0.4rem 0.8rem;cursor:pointer;outline:none;}
+  .control-select:focus{border-color:var(--gold);}
+  .viz-divider{width:1px;height:2rem;background:var(--border);flex-shrink:0;}
+
+  /* DUAL RANGE SLIDER */
+  .slider-section{display:flex;align-items:center;gap:1rem;}
+  .slider-year-badge{font-family:'JetBrains Mono',monospace;font-size:0.8rem;color:var(--gold);font-weight:500;min-width:3.5rem;text-align:center;background:rgba(201,147,58,0.08);padding:0.25rem 0.5rem;border:1px solid rgba(201,147,58,0.25);}
+  .dual-range{position:relative;width:280px;height:20px;}
+  .dual-range-track{position:absolute;top:50%;transform:translateY(-50%);left:0;right:0;height:4px;background:var(--border);border-radius:2px;}
+  .dual-range-fill{position:absolute;top:50%;transform:translateY(-50%);height:4px;background:var(--gold);border-radius:2px;}
+  .dual-range input[type=range]{
+    position:absolute;top:50%;transform:translateY(-50%);
+    width:100%;pointer-events:none;
+    -webkit-appearance:none;appearance:none;
+    background:transparent;height:20px;outline:none;margin:0;
+  }
+  .dual-range input[type=range]::-webkit-slider-thumb{
+    -webkit-appearance:none;appearance:none;
+    width:18px;height:18px;border-radius:50%;
+    background:var(--gold);cursor:pointer;
+    pointer-events:all;border:2px solid white;
+    box-shadow:0 1px 5px rgba(0,0,0,0.3);
+    transition:transform 0.1s,box-shadow 0.1s;
+  }
+  .dual-range input[type=range]::-webkit-slider-thumb:hover{transform:scale(1.15);box-shadow:0 2px 8px rgba(201,147,58,0.5);}
+  .dual-range input[type=range]::-moz-range-thumb{
+    width:18px;height:18px;border-radius:50%;
+    background:var(--gold);cursor:pointer;
+    pointer-events:all;border:2px solid white;
+    box-shadow:0 1px 5px rgba(0,0,0,0.3);
+  }
+
+  #cipChart{background:white;border:1px solid var(--border);}
+  .chart-loading{height:460px;background:white;border:1px solid var(--border);display:flex;align-items:center;justify-content:center;}
+  .chart-loading-text{font-family:'JetBrains Mono',monospace;font-size:0.75rem;color:var(--text-muted);letter-spacing:0.1em;}
+  .chart-note{margin-top:1rem;font-family:'JetBrains Mono',monospace;font-size:0.65rem;color:var(--text-muted);letter-spacing:0.04em;border-top:1px solid var(--border);padding-top:0.8rem;}
+
+  #data{background:var(--cream);}
+  .data-description{font-size:1rem;color:var(--text-muted);max-width:680px;margin-bottom:3rem;line-height:1.75;}
+  .dataset-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1.5px;background:var(--border);border:1px solid var(--border);margin-bottom:1.5rem;}
+  .dataset-card{background:white;padding:2.5rem 2rem;display:flex;flex-direction:column;transition:background 0.2s;}
+  .dataset-card:hover{background:var(--cream);}
+  .dataset-icon{font-size:1.5rem;margin-bottom:0.8rem;}
+  .dataset-type{font-family:'JetBrains Mono',monospace;font-size:0.65rem;color:var(--gold);letter-spacing:0.15em;text-transform:uppercase;margin-bottom:0.6rem;}
+  .dataset-name{font-family:'Playfair Display',Georgia,serif;font-size:1.3rem;font-weight:600;color:var(--ink);margin-bottom:0.75rem;line-height:1.3;}
+  .dataset-desc{font-size:0.9rem;color:var(--text-muted);line-height:1.65;flex-grow:1;margin-bottom:1.5rem;}
+  .dataset-meta{display:flex;flex-direction:column;gap:0.35rem;margin-bottom:1.8rem;}
+  .dataset-meta-item{font-family:'JetBrains Mono',monospace;font-size:0.65rem;color:var(--text-muted);}
+  .dataset-meta-item strong{color:var(--ink);}
+  .btn-download{display:inline-flex;align-items:center;gap:0.5rem;background:var(--ink);color:var(--cream);padding:0.7rem 1.3rem;font-family:'JetBrains Mono',monospace;font-size:0.7rem;letter-spacing:0.1em;text-transform:uppercase;text-decoration:none;cursor:pointer;transition:background 0.2s;align-self:flex-start;border:none;}
+  .btn-download:hover{background:var(--gold);color:var(--ink);}
+
+  #cip-action{background:var(--cream-dark);}
+  .action-intro{font-size:1rem;color:var(--text-muted);max-width:680px;margin-bottom:2.5rem;line-height:1.75;}
+  .action-papers{display:flex;flex-direction:column;gap:1.5px;background:var(--border);border:1px solid var(--border);}
+  .action-paper{background:white;padding:2rem 2.5rem;display:flex;gap:2rem;align-items:flex-start;transition:background 0.2s;}
+  .action-paper:hover{background:var(--cream);}
+  .action-paper-icon{font-size:1.4rem;padding-top:0.2rem;flex-shrink:0;}
+  .action-paper-year{font-family:'JetBrains Mono',monospace;font-size:0.68rem;color:var(--gold);letter-spacing:0.1em;min-width:3rem;padding-top:0.25rem;}
+  .action-paper-body{flex:1;}
+  .action-paper-title{font-family:'Playfair Display',serif;font-size:1.05rem;font-weight:600;color:var(--ink);margin-bottom:0.3rem;line-height:1.4;}
+  .action-paper-authors{font-family:'JetBrains Mono',monospace;font-size:0.68rem;color:var(--text-muted);margin-bottom:0.3rem;}
+  .action-paper-journal{font-family:'JetBrains Mono',monospace;font-size:0.65rem;color:var(--gold);margin-bottom:0.7rem;}
+  .action-paper-desc{font-size:0.88rem;color:var(--text-muted);line-height:1.65;}
+  .action-placeholder{background:white;padding:2.5rem;text-align:center;}
+  .action-placeholder-text{font-family:'JetBrains Mono',monospace;font-size:0.75rem;color:var(--border);letter-spacing:0.06em;}
+
+  #authors{background:var(--ink);color:var(--cream);}
+  #authors .section-title{color:var(--cream);}
+  #authors .section-number{color:var(--gold);}
+  #authors .section-header{border-bottom-color:rgba(201,147,58,0.3);}
+  .authors-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:2px;background:rgba(201,147,58,0.15);margin-bottom:3rem;}
+  .author-card{background:rgba(26,26,46,0.8);padding:2.5rem 2rem;transition:background 0.2s;}
+  .author-card:hover{background:rgba(40,40,70,0.9);}
+  .author-icon{font-size:1.5rem;margin-bottom:0.8rem;}
+  .author-name{font-family:'Playfair Display',Georgia,serif;font-size:1.25rem;font-weight:600;color:var(--cream);margin-bottom:0.3rem;}
+  .author-affil{font-family:'JetBrains Mono',monospace;font-size:0.68rem;color:var(--gold);letter-spacing:0.06em;margin-bottom:1rem;}
+  .author-desc{font-size:0.87rem;color:rgba(245,240,232,0.65);line-height:1.65;}
+  .cite-box{background:rgba(255,255,255,0.04);border:1px solid rgba(201,147,58,0.3);border-left:3px solid var(--gold);padding:2rem 2.5rem;}
+  .cite-label{font-family:'JetBrains Mono',monospace;font-size:0.65rem;color:var(--gold);letter-spacing:0.15em;text-transform:uppercase;margin-bottom:1rem;}
+  .cite-text{font-family:'JetBrains Mono',monospace;font-size:0.82rem;color:rgba(245,240,232,0.75);line-height:1.7;}
+  .cite-copy-btn{margin-top:1.2rem;display:inline-flex;align-items:center;gap:0.5rem;background:transparent;border:1px solid rgba(201,147,58,0.4);color:var(--gold);font-family:'JetBrains Mono',monospace;font-size:0.68rem;letter-spacing:0.1em;text-transform:uppercase;padding:0.5rem 1rem;cursor:pointer;transition:all 0.2s;}
+  .cite-copy-btn:hover{background:var(--gold);color:var(--ink);border-color:var(--gold);}
+
+  footer{background:#0f0f1e;padding:2rem 4rem;display:flex;align-items:center;justify-content:space-between;border-top:1px solid rgba(201,147,58,0.2);}
+  .footer-text{font-family:'JetBrains Mono',monospace;font-size:0.65rem;color:rgba(245,240,232,0.3);}
+  .footer-link{font-family:'JetBrains Mono',monospace;font-size:0.65rem;color:var(--gold);text-decoration:none;opacity:0.7;transition:opacity 0.2s;}
+  .footer-link:hover{opacity:1;}
+
+  .fade-up{opacity:1;transform:translateY(0);transition:opacity 0.6s ease,transform 0.6s ease;}
+  .fade-up.animate{opacity:0;transform:translateY(24px);}
+  .fade-up.animate.visible{opacity:1;transform:translateY(0);}
+
+  /* MODALS */
+  .modal-overlay{display:none;position:fixed;inset:0;z-index:200;background:rgba(10,10,20,0.7);backdrop-filter:blur(3px);overflow-y:auto;}
+  .modal-box{max-width:860px;margin:3rem auto;background:var(--cream);border-top:3px solid var(--gold);padding:3rem;position:relative;}
+  .modal-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:2rem;padding-bottom:1.5rem;border-bottom:1px solid var(--border);}
+  .modal-close{background:none;border:1px solid var(--border);color:var(--text-muted);font-family:'JetBrains Mono',monospace;font-size:0.72rem;padding:0.4rem 0.9rem;cursor:pointer;transition:all 0.2s;}
+  .modal-close:hover{border-color:var(--gold);color:var(--gold);}
+  .modal-label{font-family:'JetBrains Mono',monospace;font-size:0.68rem;color:var(--gold);letter-spacing:0.15em;text-transform:uppercase;margin-bottom:0.5rem;}
+  .modal-title{font-family:'Playfair Display',serif;font-size:1.4rem;font-weight:600;color:var(--ink);}
+
+  @media(max-width:900px){
+    .hero{grid-template-columns:1fr;}
+    .hero-visual{display:none;}
+    .dataset-grid,.authors-grid{grid-template-columns:1fr;}
+    nav{padding:0 1.5rem;}
+    .nav-links{gap:1rem;}
+    .container{padding:0 1.5rem;}
+    .hero-text{padding:4rem 1.5rem;}
+    footer{padding:1.5rem;flex-direction:column;gap:0.8rem;}
+  }
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-brand">CIP &middot; coalition-leverage.org</div>
+  <ul class="nav-links">
+    <li><a href="#abstract">&#9632; Abstract</a></li>
+    <li><a href="#why">&#9670; Why it Matters</a></li>
+    <li><a href="#visualization">&#9643; Data Explorer</a></li>
+    <li><a href="#data">&#8595; Download</a></li>
+    <li><a href="#" onclick="openGuide();return false;">&#9741; Data Guide</a></li>
+    <li><a href="#cip-action">&#9675; Use Cases</a></li>
+    <li><a href="#authors">&#9671; About Us</a></li>
+  </ul>
+</nav>
+
+<!-- HERO -->
+<div class="hero">
+  <div class="hero-text">
+    <h1>Coalition <em>Inclusion</em> Probabilities: A Party-Strategic Measure for Predicting Policy and Politics</h1>
+    <p class="hero-catchline">The first dynamic measure of parties' bargaining leverage &mdash; estimated monthly for 21 parliamentary democracies across four decades.</p>
+    <div class="hero-meta">
+      <div class="hero-meta-item"><span style="color:rgba(245,240,232,0.88);font-family:'Source Serif 4',Georgia,serif;font-weight:300;font-size:1.25rem;letter-spacing:0.01em;">Mark A. Kayser &middot; Jochen Rehmert</span></div>
+    </div>
+  </div>
+  <div class="hero-visual">
+    <div class="stat-pair">
+      <div class="stat-cell" style="padding:2.2rem 1.5rem;">
+        <div style="font-size:3.2rem;line-height:1;margin-bottom:0.8rem;">&#127758;</div>
+        <div class="stat-number" style="font-size:3.5rem;">25</div>
+        <div class="stat-label" style="font-size:0.72rem;margin-top:0.4rem;">OECD Countries</div>
+      </div>
+      <div class="stat-cell" style="padding:2.2rem 1.5rem;">
+        <div style="font-size:3.2rem;line-height:1;margin-bottom:0.8rem;">&#128337;</div>
+        <div class="stat-number" style="font-size:2.4rem;letter-spacing:-0.02em;">1970–2018</div>
+        <div class="stat-label" style="font-size:0.72rem;margin-top:0.4rem;">Original Coverage</div>
+      </div>
+    </div>
+    <!-- Update banner -->
+    <div style="background:rgba(201,147,58,0.12);border:1px solid rgba(201,147,58,0.4);padding:1rem 1.5rem;display:flex;align-items:center;gap:1rem;">
+      <span style="font-size:1.4rem;flex-shrink:0;">&#10024;</span>
+      <div style="font-family:'Source Serif 4',Georgia,serif;font-size:0.92rem;color:rgba(245,240,232,0.88);line-height:1.5;"><strong style="color:var(--gold);font-family:'JetBrains Mono',monospace;font-size:0.78rem;letter-spacing:0.1em;text-transform:uppercase;">Update!</strong> &nbsp;Now extended to 2024 &mdash; six additional years of monthly estimates.</div>
+    </div>
+    <div class="hero-buttons">
+      <!-- Two download buttons side by side -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem;">
+        <a href="#data" class="btn-secondary" style="border:2px solid var(--gold);color:var(--gold);font-size:0.85rem;padding:1.1rem 1rem;letter-spacing:0.06em;justify-content:center;font-weight:500;" onclick="trackDownload('dynamic')"><span style="font-size:1.1rem;">&#8595;</span>&nbsp;Download CIP Data</a>
+        <a href="#data" class="btn-secondary" style="border:2px solid var(--gold);color:var(--gold);font-size:0.85rem;padding:1.1rem 1rem;letter-spacing:0.06em;justify-content:center;font-weight:500;" onclick="trackDownload('polls')"><span style="font-size:1.1rem;">&#8595;</span>&nbsp;Download Polling Data</a>
+      </div>
+      <!-- Read paper full width -->
+      <a href="https://doi.org/10.1017/psrm.2021.75" target="_blank" class="btn-secondary" style="border:2px solid rgba(245,240,232,0.4);font-size:0.88rem;padding:1.1rem 1.6rem;letter-spacing:0.08em;" onclick="trackEvent('read-paper')"><span style="font-size:1.1rem;">&#8599;</span> Read Paper on CIP Measurement</a>
+      <!-- Explore CIP Data -->
+      <a href="#visualization" class="btn-secondary" style="border:2px solid rgba(245,240,232,0.2);font-size:0.88rem;padding:1.1rem 1.6rem;letter-spacing:0.08em;"><span style="font-size:1.1rem;">&#9643;</span> Explore CIP Data for 25 OECD Countries</a>
+    </div>
+  </div>
+</div>
+
+<!-- ABSTRACT -->
+<section id="abstract" style="padding:5rem 0 6rem;">
+  <div class="container">
+    <div class="section-header fade-up">
+      <span class="section-number">&sect; 01</span>
+      <h2 class="section-title">Abstract</h2>
+    </div>
+    <div class="fade-up">
+      <div style="width:100%;border:1px solid var(--border);background:white;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.1);">
+        <a href="https://doi.org/10.1017/psrm.2021.75" target="_blank" style="display:block;" onclick="trackEvent('read-paper')">
+          <img src="paper-preview.jpg" alt="Paper preview" style="width:100%;display:block;object-fit:cover;object-position:top;">
+        </a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- WHY COALITION POWER SHAPES POLICY -->
+<section id="why">
+  <div class="container">
+    <div class="section-header fade-up">
+      <span class="section-number">&sect; 02</span>
+      <h2 class="section-title">Why Coalition Power Shapes Policy</h2>
+    </div>
+    <p style="font-size:1rem;color:var(--text-muted);margin-bottom:3rem;line-height:1.85;" class="fade-up">In most parliamentary democracies, no single party governs alone. Governments are the product of coalition bargaining, and that bargaining continues throughout a government's life. Policy does not emerge cleanly from any party's electoral platform. It is the outcome of ongoing negotiations between partners who are each calculating their outside options at every turn. A party's real leverage in those negotiations comes not from how many seats it holds, but from whether other parties need it to form a viable alternative government. This is what standard measures of vote share, seat share, and polling cannot capture. CIP is the first validated and dynamic measure of this leverage, estimated monthly for every relevant party across 25 OECD democracies since 1970.</p>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.5px;background:var(--border);border:1px solid var(--border);margin-bottom:3rem;" class="fade-up">
+      <div style="background:white;padding:2rem 1.8rem;">
+        <div style="font-family:'JetBrains Mono',monospace;font-size:0.65rem;color:var(--gold);letter-spacing:0.15em;text-transform:uppercase;margin-bottom:0.8rem;">01 · The Problem</div>
+        <div style="font-family:'Playfair Display',serif;font-size:1.05rem;font-weight:600;color:var(--ink);margin-bottom:0.8rem;line-height:1.3;">Polls don't capture bargaining power</div>
+        <div style="font-size:0.9rem;color:var(--text-muted);line-height:1.7;">A party polling at 20% but excluded by all others has near-zero power. A party polling at 10% that every coalition needs has enormous leverage. Standard measures cannot tell these apart.</div>
+      </div>
+      <div style="background:white;padding:2rem 1.8rem;">
+        <div style="font-family:'JetBrains Mono',monospace;font-size:0.65rem;color:var(--gold);letter-spacing:0.15em;text-transform:uppercase;margin-bottom:0.8rem;">02 · The Gap</div>
+        <div style="font-family:'Playfair Display',serif;font-size:1.05rem;font-weight:600;color:var(--ink);margin-bottom:0.8rem;line-height:1.3;">Prior work was theoretical</div>
+        <div style="font-size:0.9rem;color:var(--text-muted);line-height:1.7;">Bargaining theorists have long argued that credible exit options shape policy outcomes, but the empirical literature on coalition governments has largely tested parties' resources within the existing government rather than their leverage from outside it. Classical voting power indices capture some of this intuition but rely only on seat shares, omitting the ideological and strategic factors that actually determine which coalitions can form.</div>
+      </div>
+      <div style="background:white;padding:2rem 1.8rem;">
+        <div style="font-family:'JetBrains Mono',monospace;font-size:0.65rem;color:var(--gold);letter-spacing:0.15em;text-transform:uppercase;margin-bottom:0.8rem;">03 · What Goes Into the Model</div>
+        <div style="font-family:'Playfair Display',serif;font-size:1.05rem;font-weight:600;color:var(--ink);margin-bottom:0.8rem;line-height:1.3;">Key variables in the coalition formation model</div>
+        <div style="font-size:0.9rem;color:var(--text-muted);line-height:1.7;">The model is a conditional logit trained on over 450 historical government formations. It incorporates factors like whether a coalition is the smallest that could hold a majority, whether it replicates the incumbent government, the ideological distance between its most extreme members, and the parties' shared history in government. Anti-establishment parties receive a strong penalty, reflecting how systematically other parties exclude them. Together these predictors capture who is realistically willing to govern with whom, not just who has the most seats.</div>
+      </div>
+      <div style="background:var(--ink);padding:2rem 1.8rem;">
+        <div style="font-family:'JetBrains Mono',monospace;font-size:0.65rem;color:var(--gold);letter-spacing:0.15em;text-transform:uppercase;margin-bottom:0.8rem;">04 · A Number Between 0 and 1</div>
+        <div style="font-family:'Playfair Display',serif;font-size:1.05rem;font-weight:600;color:var(--cream);margin-bottom:0.8rem;line-height:1.3;">What CIP Measures</div>
+        <div style="font-size:0.9rem;color:rgba(245,240,232,0.7);line-height:1.7;">For any party, in any month: <em style="color:var(--gold-light);">"If an election were held today and a new government had to form, what is the probability this party would be part of it?"</em> A CIP of 0.63 means a 63% chance of entering government.</div>
+      </div>
+    </div>
+
+    <!-- Flow diagram -->
+    <div class="fade-up" style="margin-bottom:3rem;">
+      <div style="display:flex;align-items:baseline;gap:1.5rem;margin-bottom:2rem;padding-bottom:1rem;border-bottom:1px solid var(--border);">
+        <div style="font-family:'Playfair Display',Georgia,serif;font-size:1.4rem;font-weight:600;color:var(--ink);">How CIP is Calculated</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:0;background:white;border:1px solid var(--border);overflow:hidden;">
+        <div style="flex:1;padding:1.8rem 1.5rem;text-align:center;border-right:1px solid var(--border);">
+          <div style="font-size:1.8rem;margin-bottom:0.6rem;">&#128241;</div>
+          <div style="font-family:'JetBrains Mono',monospace;font-size:0.68rem;color:var(--gold);letter-spacing:0.1em;text-transform:uppercase;margin-bottom:0.4rem;">Step 1</div>
+          <div style="font-family:'Playfair Display',serif;font-size:0.95rem;font-weight:600;color:var(--ink);margin-bottom:0.4rem;">Monthly Polls</div>
+          <div style="font-size:0.82rem;color:var(--text-muted);line-height:1.6;">Vote intention data aggregated across polling institutes</div>
+        </div>
+        <div style="padding:0 0.5rem;color:var(--gold);font-size:1.2rem;flex-shrink:0;">&#8594;</div>
+        <div style="flex:1;padding:1.8rem 1.5rem;text-align:center;border-right:1px solid var(--border);">
+          <div style="font-size:1.8rem;margin-bottom:0.6rem;">&#127963;</div>
+          <div style="font-family:'JetBrains Mono',monospace;font-size:0.68rem;color:var(--gold);letter-spacing:0.1em;text-transform:uppercase;margin-bottom:0.4rem;">Step 2</div>
+          <div style="font-family:'Playfair Display',serif;font-size:0.95rem;font-weight:600;color:var(--ink);margin-bottom:0.4rem;">Seat Simulation</div>
+          <div style="font-size:0.82rem;color:var(--text-muted);line-height:1.6;">Polls converted to simulated seat share distributions</div>
+        </div>
+        <div style="padding:0 0.5rem;color:var(--gold);font-size:1.2rem;flex-shrink:0;">&#8594;</div>
+        <div style="flex:1;padding:1.8rem 1.5rem;text-align:center;border-right:1px solid var(--border);">
+          <div style="font-size:1.8rem;margin-bottom:0.6rem;">&#129309;</div>
+          <div style="font-family:'JetBrains Mono',monospace;font-size:0.68rem;color:var(--gold);letter-spacing:0.1em;text-transform:uppercase;margin-bottom:0.4rem;">Step 3</div>
+          <div style="font-family:'Playfair Display',serif;font-size:0.95rem;font-weight:600;color:var(--ink);margin-bottom:0.4rem;">Coalition Model</div>
+          <div style="font-size:0.82rem;color:var(--text-muted);line-height:1.6;">Conditional logit model trained on 450+ historical governments</div>
+        </div>
+        <div style="padding:0 0.5rem;color:var(--gold);font-size:1.2rem;flex-shrink:0;">&#8594;</div>
+        <div style="flex:1;padding:1.8rem 1.5rem;text-align:center;border-right:1px solid var(--border);">
+          <div style="font-size:1.8rem;margin-bottom:0.6rem;">&#128200;</div>
+          <div style="font-family:'JetBrains Mono',monospace;font-size:0.68rem;color:var(--gold);letter-spacing:0.1em;text-transform:uppercase;margin-bottom:0.4rem;">Step 4</div>
+          <div style="font-family:'Playfair Display',serif;font-size:0.95rem;font-weight:600;color:var(--ink);margin-bottom:0.4rem;">CIP Score</div>
+          <div style="font-size:0.82rem;color:var(--text-muted);line-height:1.6;">Probability (0&ndash;1) of each party entering the government if one formed today</div>
+        </div>
+        <div style="padding:0 0.5rem;color:var(--gold);font-size:1.2rem;flex-shrink:0;">&#8594;</div>
+        <div style="flex:1;padding:1.8rem 1.5rem;text-align:center;background:var(--ink);">
+          <div style="font-size:1.8rem;margin-bottom:0.6rem;">&#128101;</div>
+          <div style="font-family:'JetBrains Mono',monospace;font-size:0.68rem;color:var(--gold);letter-spacing:0.1em;text-transform:uppercase;margin-bottom:0.4rem;">Output</div>
+          <div style="font-family:'Playfair Display',serif;font-size:0.95rem;font-weight:600;color:var(--cream);margin-bottom:0.4rem;">Policy Prediction</div>
+          <div style="font-size:0.82rem;color:rgba(245,240,232,0.6);line-height:1.6;">Spending, environment, pledge fulfillment</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Variables table from Table 2 -->
+    <div class="fade-up" style="margin-bottom:2rem;">
+      <div style="display:flex;align-items:baseline;gap:1.5rem;margin-bottom:1.5rem;padding-bottom:1rem;border-bottom:1px solid var(--border);">
+        <div style="font-family:'Playfair Display',Georgia,serif;font-size:1.2rem;font-weight:600;color:var(--ink);">Coalition Formation Model Variables</div>
+        <div style="font-family:'JetBrains Mono',monospace;font-size:0.65rem;color:var(--text-muted);">From Table 2, Kayser, Orlowski &amp; Rehmert (2023)</div>
+      </div>
+      <div style="background:white;border:1px solid var(--border);overflow:hidden;">
+        <table style="width:100%;border-collapse:collapse;font-size:0.87rem;">
+          <thead>
+            <tr style="background:var(--ink);">
+              <th style="text-align:left;padding:0.75rem 1.2rem;font-family:'JetBrains Mono',monospace;font-size:0.65rem;color:var(--gold);font-weight:500;letter-spacing:0.1em;text-transform:uppercase;width:32%;">Variable</th>
+              <th style="text-align:left;padding:0.75rem 1.2rem;font-family:'JetBrains Mono',monospace;font-size:0.65rem;color:var(--gold);font-weight:500;letter-spacing:0.1em;text-transform:uppercase;">What it captures</th>
+              <th style="text-align:center;padding:0.75rem 1.2rem;font-family:'JetBrains Mono',monospace;font-size:0.65rem;color:var(--gold);font-weight:500;letter-spacing:0.1em;text-transform:uppercase;width:12%;">Effect</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr style="border-bottom:1px solid var(--cream-dark);">
+              <td style="padding:0.65rem 1.2rem;font-family:'JetBrains Mono',monospace;font-size:0.78rem;color:var(--ink);">Largest party</td>
+              <td style="padding:0.65rem 1.2rem;font-size:0.85rem;color:var(--text-muted);">Whether the potential coalition includes the formateur party</td>
+              <td style="padding:0.65rem 1.2rem;text-align:center;color:#2a7a3a;font-family:'JetBrains Mono',monospace;font-size:0.75rem;">+</td>
+            </tr>
+            <tr style="border-bottom:1px solid var(--cream-dark);background:var(--cream);">
+              <td style="padding:0.65rem 1.2rem;font-family:'JetBrains Mono',monospace;font-size:0.78rem;color:var(--ink);">Minimal winning coalition</td>
+              <td style="padding:0.65rem 1.2rem;font-size:0.85rem;color:var(--text-muted);">Smallest coalition with majority — maximises portfolio allocation per party</td>
+              <td style="padding:0.65rem 1.2rem;text-align:center;color:#2a7a3a;font-family:'JetBrains Mono',monospace;font-size:0.75rem;">+</td>
+            </tr>
+            <tr style="border-bottom:1px solid var(--cream-dark);">
+              <td style="padding:0.65rem 1.2rem;font-family:'JetBrains Mono',monospace;font-size:0.78rem;color:var(--ink);">Status quo</td>
+              <td style="padding:0.65rem 1.2rem;font-size:0.85rem;color:var(--text-muted);">Whether this is the incumbent coalition — incumbency advantage is strong</td>
+              <td style="padding:0.65rem 1.2rem;text-align:center;color:#2a7a3a;font-family:'JetBrains Mono',monospace;font-size:0.75rem;">++</td>
+            </tr>
+            <tr style="border-bottom:1px solid var(--cream-dark);background:var(--cream);">
+              <td style="padding:0.65rem 1.2rem;font-family:'JetBrains Mono',monospace;font-size:0.78rem;color:var(--ink);">Ideological range</td>
+              <td style="padding:0.65rem 1.2rem;font-size:0.85rem;color:var(--text-muted);">Distance between most extreme parties in the potential coalition</td>
+              <td style="padding:0.65rem 1.2rem;text-align:center;color:#c0392b;font-family:'JetBrains Mono',monospace;font-size:0.75rem;">&minus;</td>
+            </tr>
+            <tr style="border-bottom:1px solid var(--cream-dark);">
+              <td style="padding:0.65rem 1.2rem;font-family:'JetBrains Mono',monospace;font-size:0.78rem;color:var(--ink);">Anti-establishment party</td>
+              <td style="padding:0.65rem 1.2rem;font-size:0.85rem;color:var(--text-muted);">Whether any party in the coalition is shunned as anti-system</td>
+              <td style="padding:0.65rem 1.2rem;text-align:center;color:#c0392b;font-family:'JetBrains Mono',monospace;font-size:0.75rem;">&minus;&minus;</td>
+            </tr>
+            <tr style="border-bottom:1px solid var(--cream-dark);background:var(--cream);">
+              <td style="padding:0.65rem 1.2rem;font-family:'JetBrains Mono',monospace;font-size:0.78rem;color:var(--ink);">Third largest party</td>
+              <td style="padding:0.65rem 1.2rem;font-size:0.85rem;color:var(--text-muted);">The "kingmaker" — formateur prefers 3rd over 2nd to retain a larger Gamson share</td>
+              <td style="padding:0.65rem 1.2rem;text-align:center;color:#2a7a3a;font-family:'JetBrains Mono',monospace;font-size:0.75rem;">+</td>
+            </tr>
+            <tr style="border-bottom:1px solid var(--cream-dark);">
+              <td style="padding:0.65rem 1.2rem;font-family:'JetBrains Mono',monospace;font-size:0.78rem;color:var(--ink);">Cabinet history</td>
+              <td style="padding:0.65rem 1.2rem;font-size:0.85rem;color:var(--text-muted);">How often this set of parties has governed together in the past</td>
+              <td style="padding:0.65rem 1.2rem;text-align:center;color:#2a7a3a;font-family:'JetBrains Mono',monospace;font-size:0.75rem;">++</td>
+            </tr>
+            <tr style="background:var(--cream);">
+              <td style="padding:0.65rem 1.2rem;font-family:'JetBrains Mono',monospace;font-size:0.78rem;color:var(--ink);">Minority / no-majority</td>
+              <td style="padding:0.65rem 1.2rem;font-size:0.85rem;color:var(--text-muted);">Adjusts most predictors based on whether any party holds a majority alone</td>
+              <td style="padding:0.65rem 1.2rem;text-align:center;color:var(--text-muted);font-family:'JetBrains Mono',monospace;font-size:0.75rem;">×</td>
+            </tr>
+          </tbody>
+        </table>
+        <div style="padding:0.75rem 1.2rem;background:var(--cream-dark);font-family:'JetBrains Mono',monospace;font-size:0.65rem;color:var(--text-muted);">Conditional logit model · 352 formation opportunities · 21 OECD democracies · Out-of-sample AUC = 0.89</div>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- VISUALIZATION -->
+<section id="visualization">
+  <div class="container">
+    <div class="section-header fade-up">
+      <span class="section-number">&sect; 03</span>
+      <h2 class="section-title">&#9643; Interactive Data Explorer</h2>
+    </div>
+    <p class="viz-intro fade-up">Explore real coalition inclusion probabilities. Select a country and party, then drag the year handles to zoom into any time window. The solid line is CIP (coalition leverage); the dotted line is poll share scaled to 0&ndash;1 for comparison.</p>
+    <div class="viz-controls fade-up">
+      <div class="control-group">
+        <span class="control-label">&#127758; Country</span>
+        <select class="control-select" id="countrySelect" onchange="onCountryChange()">
+          <option value="Germany">Germany</option>
+          <option value="Austria">Austria</option>
+          <option value="Czech Republic">Czech Republic</option>
+          <option value="Denmark">Denmark</option>
+          <option value="Estonia">Estonia</option>
+          <option value="Finland">Finland</option>
+          <option value="Greece">Greece</option>
+          <option value="Hungary">Hungary</option>
+          <option value="Iceland">Iceland</option>
+          <option value="Ireland">Ireland</option>
+          <option value="Italy">Italy</option>
+          <option value="Netherlands">Netherlands</option>
+          <option value="New Zealand">New Zealand</option>
+          <option value="Norway">Norway</option>
+          <option value="Poland">Poland</option>
+          <option value="Portugal">Portugal</option>
+          <option value="Slovakia">Slovakia</option>
+          <option value="Slovenia">Slovenia</option>
+          <option value="Spain">Spain</option>
+          <option value="Sweden">Sweden</option>
+        </select>
+      </div>
+      <div class="viz-divider"></div>
+      <div class="control-group">
+        <span class="control-label">&#9670; Party</span>
+        <select class="control-select" id="partySelect" onchange="updateChart()"></select>
+      </div>
+      <div class="viz-divider"></div>
+      <div class="control-group slider-section">
+        <span class="control-label">&#128337; Years</span>
+        <span class="slider-year-badge" id="yearFromLabel">—</span>
+        <div class="dual-range" id="dualRange">
+          <div class="dual-range-track"></div>
+          <div class="dual-range-fill" id="rangeFill"></div>
+          <input type="range" id="yearFrom" min="1900" max="2025" value="1970" oninput="onSlider()">
+          <input type="range" id="yearTo"   min="1900" max="2025" value="2025" oninput="onSlider()">
+        </div>
+        <span class="slider-year-badge" id="yearToLabel">—</span>
+      </div>
+    </div>
+    <div id="cipChart" class="fade-up"></div>
+    <div class="chart-note fade-up">Source: Kayser, Orlowski &amp; Rehmert (2023) &middot; Dynamic CIP Dataset &middot; Gross CIP (excluding=NaN) &middot; Shaded area = 95% confidence interval &middot; Dotted line = poll share scaled to 0&ndash;1</div>
+  </div>
+</section>
+
+<!-- DATA -->
+<section id="data">
+  <div class="container">
+    <div class="section-header fade-up">
+      <span class="section-number">&sect; 04</span>
+      <h2 class="section-title">&#8597; Data &amp; Replication</h2>
+    </div>
+    <p class="data-description fade-up">Three datasets are available for download. Dynamic and Static folders contain CIP estimates in CSV format, one file per country. The polling dataset contains the raw vote-intention poll data underlying the dynamic CIP estimates.</p>
+    <div class="dataset-grid fade-up">
+      <div class="dataset-card">
+        <div class="dataset-icon">&#128202;</div>
+        <div class="dataset-type">Dataset 01</div>
+        <div class="dataset-name">Dynamic CIP Data</div>
+        <div class="dataset-desc">Monthly coalition inclusion probabilities derived from polling data. Captures how coalition prospects shift between elections as poll numbers change.</div>
+        <div class="dataset-meta">
+          <div class="dataset-meta-item">Coverage · <strong>21 countries</strong></div>
+          <div class="dataset-meta-item">Period · <strong>1970–2024</strong></div>
+          <div class="dataset-meta-item">Frequency · <strong>Monthly</strong></div>
+          <div class="dataset-meta-item">Format · <strong>CSV (per country)</strong></div>
+        </div>
+      <a href="#" class="btn-download" onclick="trackDownload('dynamic')">&#8595; Download Dynamic</a>
+      </div>
+      <div class="dataset-card">
+        <div class="dataset-icon">&#128196;</div>
+        <div class="dataset-type">Dataset 02</div>
+        <div class="dataset-name">Static CIP Data</div>
+        <div class="dataset-desc">Election-based coalition inclusion probabilities. Broader country and historical coverage going back to the 1950s.</div>
+        <div class="dataset-meta">
+          <div class="dataset-meta-item">Coverage · <strong>31 countries</strong></div>
+          <div class="dataset-meta-item">Period · <strong>1953–present</strong></div>
+          <div class="dataset-meta-item">Frequency · <strong>Per election</strong></div>
+          <div class="dataset-meta-item">Format · <strong>CSV (per country)</strong></div>
+        </div>
+        <a href="#" class="btn-download" onclick="trackDownload('static')">&#8595; Download Static</a>
+      </div>
+      <div class="dataset-card">
+        <div class="dataset-icon">&#128203;</div>
+        <div class="dataset-type">Dataset 03</div>
+        <div class="dataset-name">Polling Data</div>
+        <div class="dataset-desc">Raw vote-intention polling data underlying the dynamic CIP estimates. Party-level poll results from multiple institutes across all covered countries.</div>
+        <div class="dataset-meta">
+          <div class="dataset-meta-item">Observations · <strong>327,384 rows</strong></div>
+          <div class="dataset-meta-item">Period · <strong>1970–2025</strong></div>
+          <div class="dataset-meta-item">Columns · <strong>12 variables</strong></div>
+          <div class="dataset-meta-item">Format · <strong>Excel (.xlsx)</strong></div>
+        </div>
+        <a href="#" class="btn-download" onclick="trackDownload('polls')">&#8595; Download Polls</a>
+      </div>
+    </div>
+    <div class="fade-up" style="margin-top:2rem;background:var(--ink);border-left:3px solid var(--gold);padding:2rem 2.5rem;">
+      <div style="font-family:'JetBrains Mono',monospace;font-size:0.65rem;color:var(--gold);letter-spacing:0.15em;text-transform:uppercase;margin-bottom:1rem;">&#128196; How to Cite</div>
+      <div style="font-family:'JetBrains Mono',monospace;font-size:0.82rem;color:rgba(245,240,232,0.75);line-height:1.7;">Kayser, M. A., Orlowski, M., &amp; Rehmert, J. (2023). Coalition inclusion probabilities: A party-strategic measure for predicting policy and politics. <em>Political Science Research and Methods</em>, 11(2), 328&ndash;346. https://doi.org/10.1017/psrm.2021.75</div>
+      <button class="cite-copy-btn" onclick="copyCitation()">&#8856; Copy Citation</button>
+    </div>
+  </div>
+</section>
+
+<!-- CIP USE CASES -->
+<section id="cip-action">
+  <div class="container">
+    <div class="section-header fade-up">
+      <span class="section-number">&sect; 05</span>
+      <h2 class="section-title">&#9675; Example Use Cases of CIP</h2>
+    </div>
+    <p class="action-intro fade-up">Research applying the CIP measure and dataset across comparative politics, legislative bargaining, and policy representation.</p>
+    <div class="action-papers fade-up">
+      <div class="action-paper">
+        <div class="action-paper-year">2026</div>
+        <div class="action-paper-body">
+          <div class="action-paper-title">Policy as a Bargaining Outcome: Coalition Leverage and Pledge Fulfillment</div>
+          <div class="action-paper-authors">Mark A. Kayser, Jochen Rehmert, Petra Schleiter</div>
+          <div class="action-paper-journal">Working Paper &middot; January 2026</div>
+          <div class="action-paper-desc">Uses CIP to test whether parties with greater coalition leverage are better able to deliver on their electoral promises. Finds that coalition bargaining leverage consistently outperforms seat share, portfolio share, and classical voting power indices in predicting pledge fulfillment across 9 parliamentary democracies.</div>
+        </div>
+      </div>
+      <div class="action-paper">
+        <div class="action-paper-year">2025</div>
+        <div class="action-paper-body">
+          <div class="action-paper-title">Measuring and Understanding Parties' Anti-elite Strategies</div>
+          <div class="action-paper-authors">Hauke Licht, Tarik Abou-Chadi, Pablo Barber&aacute;, Whitney Hua</div>
+          <div class="action-paper-journal">The Journal of Politics, Vol. 87, No. 1</div>
+          <div class="action-paper-desc">Applies CIP to study when parties use anti-elite rhetoric on social media. Finds that mainstream parties tone down anti-elite appeals when their coalition inclusion probability is higher.</div>
+        </div>
+      </div>
+      <div class="action-placeholder">
+        <div class="action-placeholder-text">[ Additional papers to be added ]</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- AUTHORS -->
+<section id="authors">
+  <div class="container">
+    <div class="section-header fade-up">
+      <span class="section-number">&sect; 06</span>
+      <h2 class="section-title">About Us</h2>
+    </div>
+    <div class="authors-grid fade-up" style="grid-template-columns:repeat(2,1fr);">
+      <div class="author-card">
+        <div class="author-name">Mark A. Kayser</div>
+        <div class="author-affil">Hertie School &middot; Berlin, Germany</div>
+        <div class="author-desc">Professor of Applied Quantitative Methods and Comparative Politics at the Hertie School, Berlin. His research addresses the economic underpinnings of democracy, political accountability, and the institutional sources of governmental representation. He received his PhD from UCLA and has held positions at the University of Rochester, Nuffield College Oxford, and Stanford's Center for Advanced Studies in the Behavioral Sciences.</div>
+      </div>
+      <div class="author-card">
+        <div class="author-name">Jochen Rehmert</div>
+        <div class="author-affil">University of Basel &middot; Basel, Switzerland</div>
+        <div class="author-desc">SNSF-Ambizione grant holder at the University of Basel, leading a project on the non-nomination of incumbent politicians. Previously a postdoctoral researcher at the University of Zurich and Humboldt University Berlin. Holds a PhD from the Hertie School in Berlin. Research focuses on candidate selection, coalition formation, legislative politics, and Japanese politics.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="footer-text">&copy; 2023 Kayser, Orlowski &amp; Rehmert &middot; Open Access CC BY-NC-ND 4.0</div>
+  <a href="https://doi.org/10.1017/psrm.2021.75" target="_blank" class="footer-link">&#8599; doi:10.1017/psrm.2021.75</a>
+</footer>
+
+<!-- DATA GUIDE MODAL -->
+<div id="guide-modal" class="modal-overlay">
+  <div class="modal-box">
+    <div class="modal-header">
+      <div><div class="modal-label">&#9741; Reference</div><div class="modal-title">Working with the Data</div></div>
+      <button class="modal-close" onclick="closeGuide()">&#x2715; Close</button>
+    </div>
+    <p style="font-size:0.95rem;color:var(--text-muted);margin-bottom:2rem;line-height:1.7;">A practical reference before opening the files. The CSV format uses two non-standard conventions that will break most default import workflows.</p>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;margin-bottom:1.5rem;">
+      <div style="background:white;border:1px solid var(--border);border-top:3px solid var(--gold);padding:1.8rem;">
+        <div style="font-family:'JetBrains Mono',monospace;font-size:0.68rem;color:var(--gold);letter-spacing:0.15em;text-transform:uppercase;margin-bottom:0.8rem;">&#9888; Number Format</div>
+        <div style="font-size:0.95rem;font-weight:600;color:var(--ink);margin-bottom:0.6rem;">Decimal commas, not dots</div>
+        <p style="font-size:0.87rem;color:var(--text-muted);line-height:1.7;margin-bottom:1rem;">CIP values use European notation &mdash; <code style="background:var(--cream-dark);padding:0.1em 0.4em;font-family:'JetBrains Mono',monospace;">0,523142</code> not <code style="background:var(--cream-dark);padding:0.1em 0.4em;font-family:'JetBrains Mono',monospace;">0.523142</code>.</p>
+        <div style="background:var(--cream);border-left:3px solid var(--gold);padding:0.7rem 1rem;font-family:'JetBrains Mono',monospace;font-size:0.75rem;color:var(--ink-light);line-height:1.7;"><span style="color:var(--text-muted)"># Python</span><br>df[col] = df[col].str.replace(',','.').astype(float)<br><br><span style="color:var(--text-muted)"># Excel: Data &rarr; From Text/CSV</span><br>set decimal separator to comma</div>
+      </div>
+      <div style="background:white;border:1px solid var(--border);border-top:3px solid var(--blue-muted);padding:1.8rem;">
+        <div style="font-family:'JetBrains Mono',monospace;font-size:0.68rem;color:var(--blue-muted);letter-spacing:0.15em;text-transform:uppercase;margin-bottom:0.8rem;">&#9888; File Format</div>
+        <div style="font-size:0.95rem;font-weight:600;color:var(--ink);margin-bottom:0.6rem;">Semicolon-delimited CSV</div>
+        <p style="font-size:0.87rem;color:var(--text-muted);line-height:1.7;margin-bottom:1rem;">Uses <code style="background:var(--cream-dark);padding:0.1em 0.4em;font-family:'JetBrains Mono',monospace;">;</code> not <code style="background:var(--cream-dark);padding:0.1em 0.4em;font-family:'JetBrains Mono',monospace;">,</code> as separator.</p>
+        <div style="background:var(--cream);border-left:3px solid var(--blue-muted);padding:0.7rem 1rem;font-family:'JetBrains Mono',monospace;font-size:0.75rem;color:var(--ink-light);line-height:1.7;"><span style="color:var(--text-muted)"># Python</span><br>pd.read_csv('file.csv', sep=';')<br><br><span style="color:var(--text-muted)"># R</span><br>read.csv2('file.csv')<br><br><span style="color:var(--text-muted)"># Stata</span><br>import delimited "file.csv", delim(";")</div>
+      </div>
+    </div>
+    <div style="background:white;border:1px solid var(--border);padding:1.8rem;margin-bottom:1.5rem;">
+      <div style="font-family:'JetBrains Mono',monospace;font-size:0.68rem;color:var(--text-muted);letter-spacing:0.15em;text-transform:uppercase;margin-bottom:1.2rem;">Column Dictionary &mdash; Dynamic CIP Dataset</div>
+      <table style="width:100%;border-collapse:collapse;font-size:0.87rem;">
+        <thead><tr style="border-bottom:2px solid var(--border);"><th style="text-align:left;padding:0.4rem 1rem 0.4rem 0;font-family:'JetBrains Mono',monospace;font-size:0.72rem;color:var(--gold);font-weight:500;width:22%;">Column</th><th style="text-align:left;padding:0.4rem 1rem 0.4rem 0;font-family:'JetBrains Mono',monospace;font-size:0.72rem;color:var(--gold);font-weight:500;width:18%;">Type</th><th style="text-align:left;padding:0.4rem 0;font-family:'JetBrains Mono',monospace;font-size:0.72rem;color:var(--gold);font-weight:500;">Description</th></tr></thead>
+        <tbody>
+          <tr style="border-bottom:1px solid var(--cream-dark);"><td style="padding:0.55rem 1rem 0.55rem 0;font-family:'JetBrains Mono',monospace;color:var(--ink);font-size:0.8rem;">country</td><td style="padding:0.55rem 1rem 0.55rem 0;color:var(--text-muted);font-size:0.8rem;">string</td><td style="padding:0.55rem 0;">Country name</td></tr>
+          <tr style="border-bottom:1px solid var(--cream-dark);"><td style="padding:0.55rem 1rem 0.55rem 0;font-family:'JetBrains Mono',monospace;color:var(--ink);font-size:0.8rem;">year</td><td style="padding:0.55rem 1rem 0.55rem 0;color:var(--text-muted);font-size:0.8rem;">integer</td><td style="padding:0.55rem 0;">Calendar year</td></tr>
+          <tr style="border-bottom:1px solid var(--cream-dark);"><td style="padding:0.55rem 1rem 0.55rem 0;font-family:'JetBrains Mono',monospace;color:var(--ink);font-size:0.8rem;">date</td><td style="padding:0.55rem 1rem 0.55rem 0;color:var(--text-muted);font-size:0.8rem;">DD.MM.YYYY</td><td style="padding:0.55rem 0;">Monthly estimate date</td></tr>
+          <tr style="border-bottom:1px solid var(--cream-dark);"><td style="padding:0.55rem 1rem 0.55rem 0;font-family:'JetBrains Mono',monospace;color:var(--ink);font-size:0.8rem;">party_abbr</td><td style="padding:0.55rem 1rem 0.55rem 0;color:var(--text-muted);font-size:0.8rem;">string</td><td style="padding:0.55rem 0;">Short party abbreviation</td></tr>
+          <tr style="border-bottom:1px solid var(--cream-dark);"><td style="padding:0.55rem 1rem 0.55rem 0;font-family:'JetBrains Mono',monospace;color:var(--ink);font-size:0.8rem;">party_name</td><td style="padding:0.55rem 1rem 0.55rem 0;color:var(--text-muted);font-size:0.8rem;">string</td><td style="padding:0.55rem 0;">Full party name in English</td></tr>
+          <tr style="border-bottom:1px solid var(--cream-dark);"><td style="padding:0.55rem 1rem 0.55rem 0;font-family:'JetBrains Mono',monospace;color:var(--ink);font-size:0.8rem;">parlgov_id</td><td style="padding:0.55rem 1rem 0.55rem 0;color:var(--text-muted);font-size:0.8rem;">integer</td><td style="padding:0.55rem 0;">ParlGov party ID &mdash; use for merging</td></tr>
+          <tr style="border-bottom:1px solid var(--cream-dark);"><td style="padding:0.55rem 1rem 0.55rem 0;font-family:'JetBrains Mono',monospace;color:var(--ink);font-size:0.8rem;">pr_ingov_mean</td><td style="padding:0.55rem 1rem 0.55rem 0;color:var(--text-muted);font-size:0.8rem;">float [0&ndash;1]</td><td style="padding:0.55rem 0;"><strong>The headline CIP</strong></td></tr>
+          <tr style="border-bottom:1px solid var(--cream-dark);"><td style="padding:0.55rem 1rem 0.55rem 0;font-family:'JetBrains Mono',monospace;color:var(--ink);font-size:0.8rem;">pr_ingov_lower</td><td style="padding:0.55rem 1rem 0.55rem 0;color:var(--text-muted);font-size:0.8rem;">float [0&ndash;1]</td><td style="padding:0.55rem 0;">Lower bound 95% CI</td></tr>
+          <tr style="border-bottom:1px solid var(--cream-dark);"><td style="padding:0.55rem 1rem 0.55rem 0;font-family:'JetBrains Mono',monospace;color:var(--ink);font-size:0.8rem;">pr_ingov_upper</td><td style="padding:0.55rem 1rem 0.55rem 0;color:var(--text-muted);font-size:0.8rem;">float [0&ndash;1]</td><td style="padding:0.55rem 0;">Upper bound 95% CI</td></tr>
+          <tr style="border-bottom:1px solid var(--cream-dark);background:var(--cream);"><td style="padding:0.55rem 1rem 0.55rem 0;font-family:'JetBrains Mono',monospace;color:var(--ink);font-size:0.8rem;">excluding</td><td style="padding:0.55rem 1rem 0.55rem 0;color:var(--text-muted);font-size:0.8rem;">string / blank</td><td style="padding:0.55rem 0;"><strong>Key variable.</strong> Blank = gross CIP. Filled = directional CIP.</td></tr>
+          <tr><td style="padding:0.55rem 1rem 0.55rem 0;font-family:'JetBrains Mono',monospace;color:var(--ink);font-size:0.8rem;">polls</td><td style="padding:0.55rem 1rem 0.55rem 0;color:var(--text-muted);font-size:0.8rem;">float [0&ndash;100]</td><td style="padding:0.55rem 0;">Monthly average poll share (%)</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;">
+      <div style="background:var(--ink);color:var(--cream);padding:1.8rem;border-top:3px solid var(--gold);">
+        <div style="font-family:'JetBrains Mono',monospace;font-size:0.68rem;color:var(--gold);letter-spacing:0.15em;text-transform:uppercase;margin-bottom:0.8rem;">The <code style="background:rgba(255,255,255,0.1);padding:0.1em 0.3em;">excluding</code> variable</div>
+        <div style="border-left:2px solid var(--gold);padding-left:1rem;margin-bottom:1rem;"><div style="font-family:'JetBrains Mono',monospace;font-size:0.75rem;color:var(--gold);margin-bottom:0.3rem;">excluding = blank</div><div style="font-size:0.85rem;color:rgba(245,240,232,0.8);">Gross CIP &mdash; use for most analyses.</div></div>
+        <div style="border-left:2px solid var(--blue-muted);padding-left:1rem;"><div style="font-family:'JetBrains Mono',monospace;font-size:0.75rem;color:#7aaddc;margin-bottom:0.3rem;">excluding = "CDU"</div><div style="font-size:0.85rem;color:rgba(245,240,232,0.8);">Directional CIP &mdash; probability of entering government without that partner.</div></div>
+      </div>
+      <div style="background:white;border:1px solid var(--border);border-top:3px solid var(--blue-muted);padding:1.8rem;">
+        <div style="font-family:'JetBrains Mono',monospace;font-size:0.68rem;color:var(--blue-muted);letter-spacing:0.15em;text-transform:uppercase;margin-bottom:0.8rem;">Dynamic vs. Static</div>
+        <div style="margin-bottom:1rem;"><div style="font-size:0.88rem;font-weight:600;color:var(--ink);margin-bottom:0.4rem;">Use Dynamic if&hellip;</div><ul style="font-size:0.85rem;color:var(--text-muted);line-height:1.8;padding-left:1.2rem;"><li>You need monthly variation between elections</li><li>Your outcome changes more often than elections</li></ul></div>
+        <div style="border-top:1px solid var(--cream-dark);padding-top:1rem;"><div style="font-size:0.88rem;font-weight:600;color:var(--ink);margin-bottom:0.4rem;">Use Static if&hellip;</div><ul style="font-size:0.85rem;color:var(--text-muted);line-height:1.8;padding-left:1.2rem;"><li>Election-period snapshots are sufficient</li><li>You want broader coverage (31 countries, back to 1953)</li></ul></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── GoatCounter event tracking ──
+function trackEvent(path) {
+  if (window.goatcounter && window.goatcounter.count) {
+    window.goatcounter.count({ path: '/' + path, title: path, event: true });
+  }
+}
+function trackDownload(dataset) {
+  trackEvent('download-' + dataset);
+}
+
+// ── Country metadata ──
+const COUNTRY_META = {"Austria":{"min_year":1995,"max_year":2024,"parties":["BZO","FPO","Greens","LIF","Liste.Dinkhauser","NEOS","OVP","PILZ","SPO","Stronach"]},"Czech Republic":{"min_year":1993,"max_year":2025,"parties":["ANO","AUTO","CSSD","KDU-CSL","KSCM","LSU","ODA","ODS","PRO","Pi","SPD","SPR-RSC","STAN","SZ","TOP09","UPD","US","VV"]},"Denmark":{"min_year":1970,"max_year":2025,"parties":["A","AE","CD","DF","En-O","FrP","KF","KrF","M","NB","NLA","RV","SF","Sd","V"]},"Estonia":{"min_year":2007,"max_year":2025,"parties":["E200","EER","EK","ERa","ERe","EV","IRL","P","SDE|M"]},"Finland":{"min_year":1994,"max_year":2025,"parties":["DL|VAS","KESK","KOK","LN","RKP-SFP","Rt","SKL|KD","SP|P","SSDP","UV","VIHR"]},"Germany":{"min_year":1970,"max_year":2024,"parties":["AfD","CDU+CSU","FDP","Greens","PDS-Linke","SPD"]},"Greece":{"min_year":1994,"max_year":2025,"parties":["AE","DISY","Dimar","EK","EL","FL","KD","KKE","LAOS","LE|PE","LS-CA","MR25","ND","Niki","PASOK","POLAN","SYN","SYRIZA","Sp","TP"]},"Hungary":{"min_year":2000,"max_year":2025,"parties":["DK","Egyutt","FKgP","Fidesz","Jobbik","LMP","MDF","MIEP","MM","MSZP","SzDSz","TISZA"]},"Iceland":{"min_year":1994,"max_year":2024,"parties":["A","Ab","B-H","BF","F","Ff","FlF","Graen","KL","M","Pi","Sam","Sj","Th-Ff","V"]},"Ireland":{"min_year":1974,"max_year":2024,"parties":["A","D-PRB","DLP","DS","FF","FG","Green","IA","Lab","PBPA","PD","SF"]},"Italy":{"min_year":2000,"max_year":2025,"parties":["A","AN","AVS","FI-PdL","FdV","Fdl-CN","IV","IdV","LN","LeU","M5S","NCD","NcI","PD","PRC","PdCI","SC","SEL","UDC"]},"Netherlands":{"min_year":1970,"max_year":2023,"parties":["50Plus","ARP","BBB","CDA","CHU","CU","D66","DENK","DS70","FVD","GL","GL-PvdA","KVP","LN","LPF","PVV","PvdA","PvdD","SGP","SP","VN","VVD"]},"New Zealand":{"min_year":1996,"max_year":2023,"parties":["A","ACT","Greens","LP","MP","Mana","NP","NZFP","PP","UFNZ"]},"Norway":{"min_year":1900,"max_year":2025,"parties":["DNA","Fr","H","KrF","MDG","RV","SF","SV","Sp","V"]},"Poland":{"min_year":1993,"max_year":2023,"parties":["AWS","BBWR","ChD","D|W|U","K","KLD","KPN","KWiN","Korwin","LPR","LR","N","NCDBdP","NSZZ","P2050","PC","PL","PO","PSL","PiS","ROP","RP","Razem","RdR","SDPL","SLD","SRP","TTW","UP","UPR","X","ZChN"]},"Portugal":{"min_year":1985,"max_year":2024,"parties":["BE","CDS-PP","CDU","CHEGA","LI","LIVRE","PAN","PRD","PS","PSD"]},"Slovakia":{"min_year":2004,"max_year":2023,"parties":["ANO","HUA","HZDS","Hlas","KDH","KLsNS","KSS","MH","OLaNO","PS","Rep","S","SDKU","SMK-MKP","SNS","SR","SaS","Smer","ZAL"]},"Slovenia":{"min_year":1996,"max_year":2025,"parties":["DL","DeSUS","GS","L","LCS","LDS","LMS","LZJ-PS","NSI","RC","SDS","SLS","SMC","SMS","SNS","ZL-SD","ZS","ZaAB","Zares","ZdLe"]},"Spain":{"min_year":1980,"max_year":2023,"parties":["AP-P","BNG","C-PC","CC","CDC","CDS","CUP","CiU","EHB","ERC","NA+","P","PCE|IU","PNV","PSOE","UCD","UPyD","Vox"]},"Sweden":{"min_year":1970,"max_year":2025,"parties":["C","FP","KD","MP","MSP","NyD","SAP","SD","V"]}};
+
+// ── Party colors for well-known parties ──
+const PARTY_COLORS = {
+  'CDU+CSU':'#1f4e97','SPD':'#c0392b','Greens':'#2d8a4e','FDP':'#e6a817',
+  'PDS-Linke':'#7b2d8b','AfD':'#444444','OVP':'#333333','SPO':'#c0392b',
+  'FPO':'#003f7f','NEOS':'#e84393','DNA':'#c0392b','H':'#1f4e97',
+  'SAP':'#c0392b','MSP':'#1f4e97','MP':'#2d8a4e','SD':'#d4a017',
+  'VVD':'#1f4e97','PvdA':'#c0392b','CDA':'#2d6e3a','D66':'#009900',
+  'PVV':'#003f7f','PSOE':'#c0392b','AP-P':'#1f4e97','Vox':'#6aaf24',
+  'ND':'#1f4e97','PASOK':'#2d8a4e','SYRIZA':'#800080'
+};
+
+let CIP_DATA = null;
+let chartInitialized = false;
+
+// ── Load JSON — try both filename variants ──
+function loadData() {
+  fetch('cip_all_countries.json')
+    .then(r => { if (!r.ok) throw new Error(); return r.json(); })
+    .then(data => { CIP_DATA = data; initCountry('Germany', 'CDU+CSU', 2005); })
+    .catch(() => {
+      // Try with full filename in case it was renamed
+      fetch('./cip_all_countries.json')
+        .then(r => { if (!r.ok) throw new Error(); return r.json(); })
+        .then(data => { CIP_DATA = data; initCountry('Germany', 'CDU+CSU', 2005); })
+        .catch(() => {
+          document.getElementById('cipChart').innerHTML =
+            '<div style="height:460px;background:white;border:1px solid var(--border);display:flex;align-items:center;justify-content:center;"><div style="font-family:JetBrains Mono,monospace;font-size:0.75rem;color:var(--text-muted);text-align:center;padding:2rem;">Chart requires local server.<br>Run: python3 -m http.server 8000</div></div>';
+        });
+    });
+}
+loadData();
+
+function getColor(party) {
+  if (PARTY_COLORS[party]) return PARTY_COLORS[party];
+  // Generate a deterministic color from party name
+  let hash = 0;
+  for (let i = 0; i < party.length; i++) hash = party.charCodeAt(i) + ((hash << 5) - hash);
+  const h = Math.abs(hash) % 360;
+  return `hsl(${h},55%,38%)`;
+}
+
+function initCountry(country, defaultParty, defaultYearFrom) {
+  const meta = COUNTRY_META[country];
+  if (!meta) return;
+
+  // Populate party dropdown
+  const partySelect = document.getElementById('partySelect');
+  partySelect.innerHTML = '';
+  meta.parties.forEach(p => {
+    const opt = document.createElement('option');
+    opt.value = p; opt.textContent = p;
+    if (defaultParty && p === defaultParty) opt.selected = true;
+    partySelect.appendChild(opt);
+  });
+
+  // Set slider range
+  const fromSlider = document.getElementById('yearFrom');
+  const toSlider   = document.getElementById('yearTo');
+  fromSlider.min = meta.min_year;
+  fromSlider.max = meta.max_year;
+  toSlider.min   = meta.min_year;
+  toSlider.max   = meta.max_year;
+  fromSlider.value = defaultYearFrom || meta.min_year;
+  toSlider.value   = meta.max_year;
+  updateSliderUI();
+  updateChart();
+}
+
+function onCountryChange() {
+  const country = document.getElementById('countrySelect').value;
+  initCountry(country, null, null);
+}
+
+function onSlider() {
+  const from = document.getElementById('yearFrom');
+  const to   = document.getElementById('yearTo');
+  // Prevent handles crossing
+  if (parseInt(from.value) > parseInt(to.value)) {
+    if (event.target === from) from.value = to.value;
+    else to.value = from.value;
+  }
+  updateSliderUI();
+  updateChart();
+}
+
+function updateSliderUI() {
+  const from  = document.getElementById('yearFrom');
+  const to    = document.getElementById('yearTo');
+  const fill  = document.getElementById('rangeFill');
+  const min   = parseInt(from.min);
+  const max   = parseInt(from.max);
+  const vFrom = parseInt(from.value);
+  const vTo   = parseInt(to.value);
+  const pFrom = ((vFrom - min) / (max - min)) * 100;
+  const pTo   = ((vTo   - min) / (max - min)) * 100;
+  fill.style.left  = pFrom + '%';
+  fill.style.width = (pTo - pFrom) + '%';
+  document.getElementById('yearFromLabel').textContent = vFrom;
+  document.getElementById('yearToLabel').textContent   = vTo;
+}
+
+function updateChart() {
+  if (!CIP_DATA) return;
+  const country = document.getElementById('countrySelect').value;
+  const party   = document.getElementById('partySelect').value;
+  const yrFrom  = parseInt(document.getElementById('yearFrom').value);
+  const yrTo    = parseInt(document.getElementById('yearTo').value);
+
+  const countryData = CIP_DATA[country];
+  if (!countryData || !countryData[party]) return;
+
+  const raw   = countryData[party];
+  const color = getColor(party);
+  const r = parseInt(color.startsWith('hsl') ? 100 : color.slice(1,3), 16);
+  const g = parseInt(color.startsWith('hsl') ? 100 : color.slice(3,5), 16);
+  const b = parseInt(color.startsWith('hsl') ? 100 : color.slice(5,7), 16);
+  const rgba = color.startsWith('hsl')
+    ? color.replace('hsl(','rgba(').replace(')',',0.12)').replace('%,',',').replace('%,',',')
+    : `rgba(${r},${g},${b},0.12)`;
+
+  // Filter by year
+  const mask   = raw.dates.map(d => { const y=parseInt(d.slice(0,4)); return y>=yrFrom && y<=yrTo; });
+  const dates  = raw.dates.filter((_,i)=>mask[i]);
+  const cip    = raw.cip.filter((_,i)=>mask[i]);
+  const upper  = raw.upper.filter((_,i)=>mask[i]);
+  const lower  = raw.lower.filter((_,i)=>mask[i]);
+  const polls  = raw.polls.filter((_,i)=>mask[i]);
+  const pollsN = polls.map(v=>v/100);
+
+  if (dates.length === 0) return;
+
+  const traces = [
+    // Confidence band
+    { x:[...dates,...dates.slice().reverse()], y:[...upper,...lower.slice().reverse()],
+      fill:'toself', fillcolor:`rgba(${r},${g},${b},0.12)`, line:{width:0},
+      showlegend:false, hoverinfo:'skip', type:'scatter' },
+    // CIP line
+    { x:dates, y:cip, mode:'lines', line:{color, width:3},
+      name:'CIP (coalition leverage)',
+      hovertemplate:'%{x|%b %Y}<br>CIP: %{y:.3f}<extra></extra>', type:'scatter' },
+    // Poll line
+    { x:dates, y:pollsN, mode:'lines', line:{color, width:2, dash:'dot'}, opacity:0.5,
+      name:'Poll share (scaled 0–1)', customdata:polls,
+      hovertemplate:'%{x|%b %Y}<br>Poll: %{customdata:.1f}%<extra></extra>', type:'scatter' }
+  ];
+
+  // Election lines for Germany
+  const ELECTIONS = {'Germany':['2005-09-18','2009-09-27','2013-09-22','2017-09-24','2021-09-26']};
+  const shapes=[], annotations=[];
+  (ELECTIONS[country]||[]).forEach(e=>{
+    if(e>=dates[0] && e<=dates[dates.length-1]){
+      shapes.push({type:'line',x0:e,x1:e,y0:0,y1:1,yref:'paper',line:{color:'#aaa',width:1.5,dash:'dash'}});
+      annotations.push({x:e,y:1.05,xref:'x',yref:'paper',text:`Election<br>${e.slice(0,4)}`,showarrow:false,font:{size:9,color:'#888'},xanchor:'center'});
+    }
+  });
+
+  const layout = {
+    height:460,
+    paper_bgcolor:'white', plot_bgcolor:'#faf9f6',
+    font:{family:"'JetBrains Mono', monospace"},
+    title:{
+      text:`<b>${country} · ${party}</b>  <span style="font-size:12px;color:#666;font-weight:normal">Coalition Leverage vs Poll Share · ${yrFrom}–${yrTo}</span>`,
+      font:{size:15,family:"'Playfair Display', serif"}, x:0.01
+    },
+    yaxis:{title:'Probability / Scaled share (0–1)',range:[-0.02,1.1],gridcolor:'#eeeeee',zeroline:false,tickformat:'.1f',tickfont:{size:10}},
+    xaxis:{gridcolor:'#eeeeee',tickfont:{size:10}},
+    legend:{orientation:'h',yanchor:'bottom',y:1.02,xanchor:'right',x:1,font:{size:11}},
+    margin:{t:80,b:50,l:65,r:30},
+    shapes, annotations
+  };
+
+  Plotly.react('cipChart', traces, layout, {responsive:true, displayModeBar:false});
+}
+
+// Modal - Data Guide only
+function openGuide(){ document.getElementById('guide-modal').style.display='block'; document.body.style.overflow='hidden'; }
+function closeGuide(){ document.getElementById('guide-modal').style.display='none'; document.body.style.overflow=''; }
+document.getElementById('guide-modal').addEventListener('click',function(e){if(e.target===this)closeGuide();});
+document.addEventListener('keydown',function(e){if(e.key==='Escape'){closeGuide();}});
+
+function copyCitation(){
+  const text='Kayser, M. A., Orlowski, M., & Rehmert, J. (2023). Coalition inclusion probabilities: A party-strategic measure for predicting policy and politics. Political Science Research and Methods, 11(2), 328\u2013346. https://doi.org/10.1017/psrm.2021.75';
+  navigator.clipboard.writeText(text).then(()=>{
+    const btn=document.querySelector('.cite-copy-btn');
+    const orig=btn.textContent; btn.textContent='\u2713 Copied!';
+    setTimeout(()=>btn.textContent=orig,2000);
+  });
+}
+
+// Fade-up scroll animations
+document.querySelectorAll('.fade-up').forEach(el => el.classList.add('animate'));
+const fadeObserver = new IntersectionObserver(entries => {
+  entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('visible'); });
+}, {threshold: 0.08});
+document.querySelectorAll('.fade-up').forEach(el => fadeObserver.observe(el));
+</script>
+<script data-goatcounter="https://cip-leverage.goatcounter.com/count" async src="//gc.zgo.at/count.js"></script>
+</body>
+</html>
